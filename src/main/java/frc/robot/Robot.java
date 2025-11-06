@@ -98,7 +98,7 @@ nb       */
         case kDefaultAuto:
         default:
           // Put default auto code here
-          the_Drive.tankDrive(0.5, 0.5);
+          the_Drive.tankDrive(1.0, 1.0);
           break;
       }
     }
@@ -110,13 +110,13 @@ nb       */
     /** This function is called periodically during operator control. */
     @Override
     public void teleopPeriodic() {
+      // if we need to change the speed for whatever reason, update this variable
       if(controller.getXButton()){
         driveDivisor = 2.0;
       }
       if(controller.getAButton()){
-        driveDivisor = 1.0;
+        driveDivisor = 4.0;
       }
-    
     the_Drive.arcadeDrive(-controller.getLeftY()/driveDivisor, -controller.getRightX()/driveDivisor);
   }
 
