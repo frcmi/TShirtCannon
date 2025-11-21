@@ -16,6 +16,14 @@ import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
+import static edu.wpi.first.units.Units.Degrees;
+
+import com.ctre.phoenix6.configs.MotionMagicConfigs;
+import com.ctre.phoenix6.configs.Slot0Configs;
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.controls.MotionMagicVoltage;
+import com.ctre.phoenix6.hardware.TalonFX;
+
 /**
  * The methods in this class are called automatically corresponding to each mode, as described in
  * the TimedRobot documentation. If you change the name of this class or the package after creating
@@ -33,7 +41,16 @@ public class Robot extends TimedRobot {
   private final DifferentialDrive the_Drive = new DifferentialDrive(leftLeader, rightLeader);
   private final SparkMaxConfig driveConfig = new SparkMaxConfig();
   private final XboxController controller = new XboxController(0);
+  private final TalonFX pivotMotor = new TalonFX(0);
+  private final TalonFXConfiguration talonFXConfigs = new TalonFXConfiguration();
+  private Slot0Configs slot0Configs = talonFXConfigs.Slot0;
+  private MotionMagicConfigs motionMagicConfigs = talonFXConfigs.MotionMagic;
+  private final MotionMagicVoltage m_request = new MotionMagicVoltage(0);
+  private double setpoint = 0;
   private double driveDivisor = 1.0;
+  private final double pivotSpeed = 0.75; // Do NOT go above 1 unless you know what you're doing
+  private final double pivotMin = 0;
+  private final double pivotMax = 60; // TODO: Get min and max, encoder uses 0 as starting position, though
   
     /**
      * This function is run when the robot is first started up and should be used for any
@@ -58,7 +75,19 @@ nb       */
       rightLeader.configure(driveConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
       driveConfig.inverted(true);
       leftLeader.configure(driveConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
-      
+
+      slot0Configs.kS = 0;
+      slot0Configs.kV = 0;
+      slot0Configs.kA = 0;
+      slot0Configs.kP = 5;
+      slot0Configs.kI = 0;
+      slot0Configs.kD = 0;
+
+      motionMagicConfigs.MotionMagicCruiseVelocity = 80;
+      motionMagicConfigs.MotionMagicAcceleration = 160;
+      motionMagicConfigs.MotionMagicJerk = 1600;
+
+      pivotMotor.getConfigurator().apply(talonFXConfigs);
     }
   
     /**
@@ -117,6 +146,14 @@ nb       */
       if(controller.getAButton()){
         driveDivisor = 4.0;
       }
+      if(controller.getLeftBumperButton()) {
+        setpoint += pivotSpeed;
+      }
+      if(controller.getRightBumperButton()) {
+        setpoint -= pivotSpeed;
+      }
+      setpoint = Math.max(pivotMin, Math.min(pivotMax, setpoint));
+      pivotMotor.setControl(m_request.withPosition(setpoint));
     the_Drive.arcadeDrive(-controller.getLeftY()/driveDivisor, -controller.getRightX()/driveDivisor);
   }
 
