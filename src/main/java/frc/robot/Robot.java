@@ -46,11 +46,11 @@ public class Robot extends TimedRobot {
   private Slot0Configs slot0Configs = talonFXConfigs.Slot0;
   private MotionMagicConfigs motionMagicConfigs = talonFXConfigs.MotionMagic;
   private final MotionMagicVoltage m_request = new MotionMagicVoltage(0);
-  private double setpoint = 0;
+  private double setpoint = 0; // Be careful, motor will go straight here on enable unless overrided by min/max
   private double driveDivisor = 1.0;
-  private final double pivotSpeed = 0.75; // Do NOT go above 1 unless you know what you're doing
+  private final double pivotSpeed = 0.5; // Do NOT go above 1 unless you know what you're doing
   private final double pivotMin = 0;
-  private final double pivotMax = 60; // TODO: Get min and max, encoder uses 0 as starting position, though
+  private final double pivotMax = 50; // TODO: Get min and max
   
     /**
      * This function is run when the robot is first started up and should be used for any
