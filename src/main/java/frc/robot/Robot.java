@@ -46,11 +46,13 @@ public class Robot extends TimedRobot {
   private Slot0Configs slot0Configs = talonFXConfigs.Slot0;
   private MotionMagicConfigs motionMagicConfigs = talonFXConfigs.MotionMagic;
   private final MotionMagicVoltage m_request = new MotionMagicVoltage(0);
-  private double setpoint = 0; // Be careful, motor will go straight here on enable unless overrided by min/max
+
+  private final double angle1 = 15; // Be careful, motor will go straight here on enable
+  private final double angle2 = 30;
+  private final double angle3 = 45;
+
+  private double setpoint = angle1;
   private double driveDivisor = 1.0;
-  private final double pivotSpeed = 0.5; // Do NOT go above 1 unless you know what you're doing
-  private final double pivotMin = 0;
-  private final double pivotMax = 50; // TODO: Get min and max
   
     /**
      * This function is run when the robot is first started up and should be used for any
@@ -76,7 +78,7 @@ nb       */
       driveConfig.inverted(true);
       leftLeader.configure(driveConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
-      slot0Configs.kS = 0;
+      slot0Configs.kS = 0; // TODO: Tune values
       slot0Configs.kV = 0;
       slot0Configs.kA = 0;
       slot0Configs.kP = 5;
@@ -134,7 +136,9 @@ nb       */
   
     /** This function is called once when teleop is enabled. */
     @Override
-    public void teleopInit() {}
+    public void teleopInit() {
+      pivotMotor.setPosition(Degrees.of(0));
+    }
   
     /** This function is called periodically during operator control. */
     @Override
@@ -146,13 +150,15 @@ nb       */
       if(controller.getAButton()){
         driveDivisor = 4.0;
       }
-      if(controller.getLeftBumperButton()) {
-        setpoint += pivotSpeed;
+      if(controller.getBButton()){
+        setpoint = angle1;
       }
-      if(controller.getRightBumperButton()) {
-        setpoint -= pivotSpeed;
+      if(controller.getYButton()){
+        setpoint = angle2;
       }
-      setpoint = Math.max(pivotMin, Math.min(pivotMax, setpoint));
+      if(controller.getRightBumperButton()){
+        setpoint = angle3;
+      }
       pivotMotor.setControl(m_request.withPosition(setpoint));
     the_Drive.arcadeDrive(-controller.getLeftY()/driveDivisor, -controller.getRightX()/driveDivisor);
   }
