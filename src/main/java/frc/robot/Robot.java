@@ -13,6 +13,7 @@ import com.revrobotics.spark.config.SparkMaxConfig;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
+import edu.wpi.first.wpilibj.motorcontrol.Spark;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
@@ -53,6 +54,8 @@ public class Robot extends TimedRobot {
 
   private double setpoint = angle1;
   private double driveDivisor = 1.0;
+
+  private Spark m_shooterMotor = new Spark(0);
   
     /**
      * This function is run when the robot is first started up and should be used for any
@@ -158,6 +161,11 @@ nb       */
       }
       if(controller.getRightBumperButton()){
         setpoint = angle3;
+      }
+      if(controller.getLeftBumperButton()) {
+        m_shooterMotor.set(1);
+      } else {
+        m_shooterMotor.set(0);
       }
       pivotMotor.setControl(m_request.withPosition(setpoint));
     the_Drive.arcadeDrive(-controller.getLeftY()/driveDivisor, -controller.getRightX()/driveDivisor);
