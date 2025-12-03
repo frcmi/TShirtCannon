@@ -10,6 +10,8 @@ import com.revrobotics.spark.SparkBase.PersistMode;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.config.SparkMaxConfig;
 
+import edu.wpi.first.wpilibj.Compressor;
+import edu.wpi.first.wpilibj.PneumaticsModuleType;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
@@ -55,7 +57,10 @@ public class Robot extends TimedRobot {
   private double setpoint = angle1;
   private double driveDivisor = 1.0;
 
-  private Spark m_shooterMotor = new Spark(0);
+  private SparkMax m_shooterMotor1 = new SparkMax(1, MotorType.kBrushed);
+  private SparkMax m_shooterMotor2 = new SparkMax(2, MotorType.kBrushed);
+  private SparkMax m_shooterMotor3 = new SparkMax(3, MotorType.kBrushed);
+  private SparkMax m_shooterMotor4 = new SparkMax(4, MotorType.kBrushed);
   
     /**
      * This function is run when the robot is first started up and should be used for any
@@ -92,7 +97,7 @@ nb       */
       motionMagicConfigs.MotionMagicAcceleration = 160;
       motionMagicConfigs.MotionMagicJerk = 1600;
 
-      pivotMotor.getConfigurator().apply(talonFXConfigs);
+      // pivotMotor.getConfigurator().apply(talonFXConfigs);
     }
   
     /**
@@ -142,30 +147,51 @@ nb       */
     public void teleopInit() {
       pivotMotor.setPosition(Degrees.of(0));
     }
+
+    Compressor compressor = new Compressor(PneumaticsModuleType.CTREPCM);
   
     /** This function is called periodically during operator control. */
     @Override
     public void teleopPeriodic() {
       // if we need to change the speed for whatever reason, update this variable
-      if(controller.getXButton()){
+      if(controller.getLeftBumperButton()){
         driveDivisor = 2.0;
-      }
-      if(controller.getAButton()){
+      } else {
         driveDivisor = 4.0;
       }
-      if(controller.getBButton()){
+      if(controller.getRightBumperButton()){
         setpoint = angle1;
       }
-      if(controller.getYButton()){
+      if(controller.getLeftTriggerAxis() > 0.2){
         setpoint = angle2;
       }
-      if(controller.getRightBumperButton()){
+      if(controller.getRightTriggerAxis() > 0.2){
         setpoint = angle3;
       }
-      if(controller.getLeftBumperButton()) {
-        m_shooterMotor.set(1);
+      if(controller.getXButton()) {
+        m_shooterMotor1.setVoltage(12);
       } else {
-        m_shooterMotor.set(0);
+        m_shooterMotor1.setVoltage(0);
+      }
+      if(controller.getYButton()) {
+        m_shooterMotor2.setVoltage(12);
+      } else {
+        m_shooterMotor2.setVoltage(0);
+      }
+      if(controller.getBButton()) {
+        m_shooterMotor3.setVoltage(12);
+      } else {
+        m_shooterMotor3.setVoltage(0);
+      }
+      if(controller.getAButton()) {
+        m_shooterMotor4.setVoltage(12);
+      } else {
+        m_shooterMotor4.setVoltage(0);
+      }
+      if (controller.getAButton()) { // TODO: Switch keybind!
+        compressor.enableDigital();
+      } else {
+        compressor.disable();
       }
       pivotMotor.setControl(m_request.withPosition(setpoint));
     the_Drive.arcadeDrive(-controller.getLeftY()/driveDivisor, -controller.getRightX()/driveDivisor);
