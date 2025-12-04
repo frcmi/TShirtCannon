@@ -154,41 +154,48 @@ nb       */
     @Override
     public void teleopPeriodic() {
       // if we need to change the speed for whatever reason, update this variable
-      if(controller.getLeftBumperButton()){
+      /** if(controller.getLeftBumperButton()){
         driveDivisor = 2.0;
       } else {
         driveDivisor = 4.0;
-      }
-      if(controller.getRightBumperButton()){
+      } */
+
+      if(controller.getRightBumperButton() && controller.getPOV() == 0){
         setpoint = angle1;
       }
-      if(controller.getLeftTriggerAxis() > 0.2){
+      if(controller.getRightBumperButton() && controller.getPOV() == 90){
         setpoint = angle2;
       }
-      if(controller.getRightTriggerAxis() > 0.2){
+      if(controller.getRightBumperButton() && controller.getPOV() == 180){
         setpoint = angle3;
       }
-      if(controller.getXButton()) {
+      if(controller.getPOV() == 0){
+        setpoint++;
+      }
+      if(controller.getPOV() == 180){
+        setpoint--;
+      }
+      if(controller.getXButton() && controller.getLeftBumperButton()) {
         m_shooterMotor1.setVoltage(12);
       } else {
         m_shooterMotor1.setVoltage(0);
       }
-      if(controller.getYButton()) {
+      if(controller.getYButton() && controller.getLeftBumperButton()) {
         m_shooterMotor2.setVoltage(12);
       } else {
         m_shooterMotor2.setVoltage(0);
       }
-      if(controller.getBButton()) {
+      if(controller.getBButton() && controller.getLeftBumperButton()) {
         m_shooterMotor3.setVoltage(12);
       } else {
         m_shooterMotor3.setVoltage(0);
       }
-      if(controller.getAButton()) {
+      if(controller.getAButton() && controller.getLeftBumperButton()){
         m_shooterMotor4.setVoltage(12);
       } else {
         m_shooterMotor4.setVoltage(0);
       }
-      if (controller.getAButton()) { // TODO: Switch keybind!
+      if (controller.getLeftTriggerAxis() > 0.2) {
         compressor.enableDigital();
       } else {
         compressor.disable();
