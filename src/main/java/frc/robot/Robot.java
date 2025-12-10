@@ -4,35 +4,42 @@
 
 package frc.robot;
 
-import com.revrobotics.spark.SparkBase.ResetMode;
-import com.revrobotics.spark.SparkMax;
+import static edu.wpi.first.units.Units.Degrees;
+
+import org.littletonrobotics.junction.LoggedRobot;
+
+
+import com.ctre.phoenix6.configs.CANdleConfiguration;
+import com.ctre.phoenix6.configs.MotionMagicConfigs;
+import com.ctre.phoenix6.configs.Slot0Configs;
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.controls.ColorFlowAnimation;
+import com.ctre.phoenix6.controls.FireAnimation;
+import com.ctre.phoenix6.controls.MotionMagicVoltage;
+import com.ctre.phoenix6.controls.TwinkleAnimation;
+import com.ctre.phoenix6.hardware.CANdle;
+import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.RGBWColor;
+import com.ctre.phoenix6.signals.StripTypeValue;
 import com.revrobotics.spark.SparkBase.PersistMode;
+import com.revrobotics.spark.SparkBase.ResetMode;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
+import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.SparkMaxConfig;
 
 import edu.wpi.first.wpilibj.Compressor;
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
-import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
-import edu.wpi.first.wpilibj.motorcontrol.Spark;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-
-import static edu.wpi.first.units.Units.Degrees;
-
-import com.ctre.phoenix6.configs.MotionMagicConfigs;
-import com.ctre.phoenix6.configs.Slot0Configs;
-import com.ctre.phoenix6.configs.TalonFXConfiguration;
-import com.ctre.phoenix6.controls.MotionMagicVoltage;
-import com.ctre.phoenix6.hardware.TalonFX;
 
 /**
  * The methods in this class are called automatically corresponding to each mode, as described in
  * the TimedRobot documentation. If you change the name of this class or the package after creating
  * this project, you must also update the Main.java file in the project.
  */
-public class Robot extends TimedRobot {
+public class Robot extends LoggedRobot {
   private static final String kDefaultAuto = "Default";
   private static final String kCustomAuto = "My Auto";
   private String m_autoSelected;
@@ -50,9 +57,9 @@ public class Robot extends TimedRobot {
   private MotionMagicConfigs motionMagicConfigs = talonFXConfigs.MotionMagic;
   private final MotionMagicVoltage m_request = new MotionMagicVoltage(0);
 
-  private final double angle1 = 15; // Be careful, motor will go straight here on enable
-  private final double angle2 = 30;
-  private final double angle3 = 45;
+  private final double angle1 = 0; // Be careful, motor will go straight here on enable
+  private final double angle2 = 10;
+  private final double angle3 = 20;
 
   private double setpoint = angle1;
   private double driveDivisor = 1.0;
@@ -61,12 +68,12 @@ public class Robot extends TimedRobot {
   private SparkMax m_shooterMotor2 = new SparkMax(2, MotorType.kBrushed);
   private SparkMax m_shooterMotor3 = new SparkMax(3, MotorType.kBrushed);
   private SparkMax m_shooterMotor4 = new SparkMax(4, MotorType.kBrushed);
-  
-    /**
-     * This function is run when the robot is first started up and should be used for any
-     * initialization code.
-nb       */
 
+  Compressor compressor = new Compressor(PneumaticsModuleType.CTREPCM);
+
+  private final CANdle leds = new CANdle(12);
+  private final CANdleConfiguration configled = new CANdleConfiguration();
+  
     public Robot() {
       m_chooser.setDefaultOption("Default Auto", kDefaultAuto);
       m_chooser.addOption("My Auto", kCustomAuto);
@@ -96,7 +103,9 @@ nb       */
       motionMagicConfigs.MotionMagicCruiseVelocity = 80;
       motionMagicConfigs.MotionMagicAcceleration = 160;
       motionMagicConfigs.MotionMagicJerk = 1600;
-
+      configled.LED.StripType = StripTypeValue.RGB;
+      configled.LED.BrightnessScalar = 1;
+      
       // pivotMotor.getConfigurator().apply(talonFXConfigs);
     }
   
@@ -108,7 +117,9 @@ nb       */
      * SmartDashboard integrated updating.
      */
     @Override
-    public void robotPeriodic() {}
+    public void robotPeriodic() {
+      leds.setControl(new ColorFlowAnimation(8, 19+8).withColor(new RGBWColor(255, 0, 255)));
+    }
   
     /**
      * This autonomous (along with the chooser code above) shows how to select between different
@@ -140,6 +151,7 @@ nb       */
           the_Drive.tankDrive(1.0, 1.0);
           break;
       }
+      
     }
   
     /** This function is called once when teleop is enabled. */
@@ -147,8 +159,6 @@ nb       */
     public void teleopInit() {
       pivotMotor.setPosition(Degrees.of(0));
     }
-
-    Compressor compressor = new Compressor(PneumaticsModuleType.CTREPCM);
   
     /** This function is called periodically during operator control. */
     @Override
