@@ -45,9 +45,9 @@ public class Robot extends LoggedRobot {
   private String m_autoSelected;
   private final SendableChooser<String> m_chooser = new SendableChooser<>();
   private final SparkMax leftLeader = new SparkMax(9, MotorType.kBrushless);
-  private final SparkMax leftFollower = new SparkMax(6, MotorType.kBrushless);
+  private final SparkMax leftFollower = new SparkMax(14, MotorType.kBrushless);
   private final SparkMax rightLeader = new SparkMax(11, MotorType.kBrushless);
-  private final SparkMax rightFollower = new SparkMax(8, MotorType.kBrushless);
+  private final SparkMax rightFollower = new SparkMax(13, MotorType.kBrushless);
   private final DifferentialDrive the_Drive = new DifferentialDrive(leftLeader, rightLeader);
   private final SparkMaxConfig driveConfig = new SparkMaxConfig();
   private final XboxController controller = new XboxController(0);
@@ -96,7 +96,7 @@ public class Robot extends LoggedRobot {
       slot0Configs.kS = 0; // TODO: Tune values
       slot0Configs.kV = 0;
       slot0Configs.kA = 0;
-      slot0Configs.kP = 5;
+      slot0Configs.kP = 0;
       slot0Configs.kI = 0;
       slot0Configs.kD = 0;
 
@@ -186,9 +186,9 @@ public class Robot extends LoggedRobot {
         setpoint--;
       }
       if(controller.getXButton() && controller.getLeftBumperButton()) {
-        m_shooterMotor1.setVoltage(12);
+        m_shooterMotor4.setVoltage(12);
       } else {
-        m_shooterMotor1.setVoltage(0);
+        m_shooterMotor4.setVoltage(0);
       }
       if(controller.getYButton() && controller.getLeftBumperButton()) {
         m_shooterMotor2.setVoltage(12);
@@ -201,9 +201,9 @@ public class Robot extends LoggedRobot {
         m_shooterMotor3.setVoltage(0);
       }
       if(controller.getAButton() && controller.getLeftBumperButton()){
-        m_shooterMotor4.setVoltage(12);
+        m_shooterMotor1.setVoltage(12);
       } else {
-        m_shooterMotor4.setVoltage(0);
+        m_shooterMotor1.setVoltage(0);
       }
       if (controller.getLeftTriggerAxis() > 0.2) {
         compressor.enableDigital();
