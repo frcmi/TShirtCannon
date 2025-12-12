@@ -5,21 +5,30 @@
 package frc.robot;
 
 import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.Rotations;
 
 import org.littletonrobotics.junction.LoggedRobot;
 
 
 import com.ctre.phoenix6.configs.CANdleConfiguration;
+import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
+import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.ColorFlowAnimation;
 import com.ctre.phoenix6.controls.FireAnimation;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
+import com.ctre.phoenix6.controls.PositionVoltage;
+import com.ctre.phoenix6.controls.SolidColor;
 import com.ctre.phoenix6.controls.TwinkleAnimation;
 import com.ctre.phoenix6.hardware.CANdle;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.GravityTypeValue;
+import com.ctre.phoenix6.signals.InvertedValue;
+import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.signals.RGBWColor;
+import com.ctre.phoenix6.signals.StaticFeedforwardSignValue;
 import com.ctre.phoenix6.signals.StripTypeValue;
 import com.revrobotics.spark.SparkBase.PersistMode;
 import com.revrobotics.spark.SparkBase.ResetMode;
@@ -49,17 +58,29 @@ public class Robot extends LoggedRobot {
   private final SparkMax rightLeader = new SparkMax(11, MotorType.kBrushless);
   private final SparkMax rightFollower = new SparkMax(13, MotorType.kBrushless);
   private final DifferentialDrive the_Drive = new DifferentialDrive(leftLeader, rightLeader);
+  
   private final SparkMaxConfig driveConfig = new SparkMaxConfig();
   private final XboxController controller = new XboxController(0);
-  private final TalonFX pivotMotor = new TalonFX(0);
-  private final TalonFXConfiguration talonFXConfigs = new TalonFXConfiguration();
-  private Slot0Configs slot0Configs = talonFXConfigs.Slot0;
-  private MotionMagicConfigs motionMagicConfigs = talonFXConfigs.MotionMagic;
-  private final MotionMagicVoltage m_request = new MotionMagicVoltage(0);
+  private final TalonFX pivotMotor = new TalonFX(13);
+  private final TalonFXConfiguration talonFXConfigs = new TalonFXConfiguration()
+    .withMotorOutput(
+      new MotorOutputConfigs()
+        .withNeutralMode(NeutralModeValue.Brake)
+        .withInverted(InvertedValue.Clockwise_Positive)
+      )
+    .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(90));
+  private Slot0Configs slot0Configs = talonFXConfigs.Slot0
+    .withKG(0.23)
+    .withKS(0.23)
+    .withKP(1.8)
+    .withKD(0.1)
+    .withGravityType(GravityTypeValue.Arm_Cosine)
+    .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseClosedLoopSign);
+  private final PositionVoltage m_request = new PositionVoltage(0.0);
 
-  private final double angle1 = 0; // Be careful, motor will go straight here on enable
-  private final double angle2 = 10;
-  private final double angle3 = 20;
+  private final double angle1 = -0.005; // Be careful, motor will go straight here on enable
+  private final double angle2 = 0.0;
+  private final double angle3 = 0.01;
 
   private double setpoint = angle1;
   private double driveDivisor = 1.0;
@@ -93,20 +114,11 @@ public class Robot extends LoggedRobot {
       driveConfig.inverted(true);
       leftLeader.configure(driveConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
-      slot0Configs.kS = 0; // TODO: Tune values
-      slot0Configs.kV = 0;
-      slot0Configs.kA = 0;
-      slot0Configs.kP = 0;
-      slot0Configs.kI = 0;
-      slot0Configs.kD = 0;
-
-      motionMagicConfigs.MotionMagicCruiseVelocity = 80;
-      motionMagicConfigs.MotionMagicAcceleration = 160;
-      motionMagicConfigs.MotionMagicJerk = 1600;
       configled.LED.StripType = StripTypeValue.RGB;
       configled.LED.BrightnessScalar = 1;
       
-      // pivotMotor.getConfigurator().apply(talonFXConfigs);
+      pivotMotor.getConfigurator().apply(talonFXConfigs);
+      pivotMotor.getConfigurator().apply(slot0Configs);
     }
   
     /**
@@ -118,7 +130,6 @@ public class Robot extends LoggedRobot {
      */
     @Override
     public void robotPeriodic() {
-      leds.setControl(new ColorFlowAnimation(8, 19+8).withColor(new RGBWColor(255, 0, 255)));
     }
   
     /**
@@ -157,7 +168,8 @@ public class Robot extends LoggedRobot {
     /** This function is called once when teleop is enabled. */
     @Override
     public void teleopInit() {
-      pivotMotor.setPosition(Degrees.of(0));
+      leds.setControl(new ColorFlowAnimation(8, 19+8).withColor(new RGBWColor(255, 0, 255)));
+      pivotMotor.setPosition(Rotations.of(-0.01));
     }
   
     /** This function is called periodically during operator control. */
@@ -169,7 +181,9 @@ public class Robot extends LoggedRobot {
       } else {
         driveDivisor = 4.0;
       } */
-
+      System.out.println(controller.getPOV());
+      System.out.println(setpoint);
+      
       if(controller.getRightBumperButton() && controller.getPOV() == 0){
         setpoint = angle1;
       }
@@ -179,12 +193,7 @@ public class Robot extends LoggedRobot {
       if(controller.getRightBumperButton() && controller.getPOV() == 180){
         setpoint = angle3;
       }
-      if(controller.getPOV() == 0){
-        setpoint++;
-      }
-      if(controller.getPOV() == 180){
-        setpoint--;
-      }
+      
       if(controller.getXButton() && controller.getLeftBumperButton()) {
         m_shooterMotor4.setVoltage(12);
       } else {
@@ -205,18 +214,25 @@ public class Robot extends LoggedRobot {
       } else {
         m_shooterMotor1.setVoltage(0);
       }
-      if (controller.getLeftTriggerAxis() > 0.2) {
-        compressor.enableDigital();
-      } else {
-        compressor.disable();
+      if (controller.getStartButton()) {
+        pivotMotor.setPosition(Rotations.of(-0.01));
+
       }
+      // if (controller.getLeftTriggerAxis() > 0.2) {
+      //   compressor.enableDigital();
+      // } else {
+      //   compressor.disable();
+      // }
       pivotMotor.setControl(m_request.withPosition(setpoint));
-    the_Drive.arcadeDrive(-controller.getLeftY()/driveDivisor, -controller.getRightX()/driveDivisor);
+      
+      the_Drive.arcadeDrive(-controller.getLeftY()/driveDivisor, controller.getRightX()/driveDivisor);
   }
 
   /** This function is called once when the robot is disabled. */
   @Override
-  public void disabledInit() {}
+  public void disabledInit() {
+    leds.setControl(new SolidColor(8, 19+8).withColor(new RGBWColor(255, 0, 255)));
+  }
 
   /** This function is called periodically when disabled. */
   @Override
