@@ -15,6 +15,7 @@ import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
+import com.ctre.phoenix6.configs.Slot1Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.ColorFlowAnimation;
 import com.ctre.phoenix6.controls.FireAnimation;
@@ -70,17 +71,27 @@ public class Robot extends LoggedRobot {
       )
     .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(90));
   private Slot0Configs slot0Configs = talonFXConfigs.Slot0
+    .withKG(0.52)
+    .withKS(0.23)
+    .withKP(2.1)
+    .withKD(0.1)
+    .withGravityType(GravityTypeValue.Arm_Cosine)
+    .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseClosedLoopSign);
+
+  private Slot1Configs slot1Configs = talonFXConfigs.Slot1
     .withKG(0.23)
     .withKS(0.23)
     .withKP(1.8)
     .withKD(0.1)
     .withGravityType(GravityTypeValue.Arm_Cosine)
     .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseClosedLoopSign);
-  private final PositionVoltage m_request = new PositionVoltage(0.0);
+  private final PositionVoltage m_requestLoaded = new PositionVoltage(0.0).withSlot(0);
+  private final PositionVoltage m_requestUnloaded = new PositionVoltage(0.0).withSlot(1);
 
   private final double angle1 = -0.005; // Be careful, motor will go straight here on enable
   private final double angle2 = 0.0;
-  private final double angle3 = 0.01;
+  private final double angle3 = 0.0048;
+  private final double angle4 = 0.008;
 
   private double setpoint = angle1;
   private double driveDivisor = 1.0;
@@ -91,6 +102,7 @@ public class Robot extends LoggedRobot {
   private SparkMax m_shooterMotor4 = new SparkMax(4, MotorType.kBrushed);
 
   Compressor compressor = new Compressor(PneumaticsModuleType.CTREPCM);
+
 
   private final CANdle leds = new CANdle(12);
   private final CANdleConfiguration configled = new CANdleConfiguration();
@@ -119,6 +131,8 @@ public class Robot extends LoggedRobot {
       
       pivotMotor.getConfigurator().apply(talonFXConfigs);
       pivotMotor.getConfigurator().apply(slot0Configs);
+      pivotMotor.getConfigurator().apply(slot1Configs);
+
     }
   
     /**
@@ -168,10 +182,12 @@ public class Robot extends LoggedRobot {
     /** This function is called once when teleop is enabled. */
     @Override
     public void teleopInit() {
-      leds.setControl(new ColorFlowAnimation(8, 19+8).withColor(new RGBWColor(255, 0, 255)));
+      leds.setControl(new ColorFlowAnimation(8, 19+8).withColor(new RGBWColor(255, 0, 0)));
       pivotMotor.setPosition(Rotations.of(-0.01));
     }
   
+    PositionVoltage currentCommand = m_requestLoaded;
+
     /** This function is called periodically during operator control. */
     @Override
     public void teleopPeriodic() {
@@ -181,18 +197,33 @@ public class Robot extends LoggedRobot {
       } else {
         driveDivisor = 4.0;
       } */
-      System.out.println(controller.getPOV());
-      System.out.println(setpoint);
+      // System.out.println(controller.getPOV());
+      // System.out.println(setpoint);
+
+      boolean rightBumper = controller.getRightBumperButton();
+      boolean rightTrigger = controller.getRightTriggerAxis() > 0.2;
       
-      if(controller.getRightBumperButton() && controller.getPOV() == 0){
-        setpoint = angle1;
+      if (rightBumper || rightTrigger) {
+        if(controller.getPOV() == 0){
+          setpoint = angle1;
+        }
+        if(controller.getPOV() == 90){
+          setpoint = angle2;
+        }
+        if(controller.getPOV() == 180){
+          setpoint = angle3;
+        }
+        if(controller.getPOV() == 270){
+          setpoint = angle4;
+        }
+
+        if (rightBumper) {
+          currentCommand = m_requestLoaded;
+        } else {
+          currentCommand = m_requestUnloaded;
+        }
       }
-      if(controller.getRightBumperButton() && controller.getPOV() == 90){
-        setpoint = angle2;
-      }
-      if(controller.getRightBumperButton() && controller.getPOV() == 180){
-        setpoint = angle3;
-      }
+      
       
       if(controller.getXButton() && controller.getLeftBumperButton()) {
         m_shooterMotor4.setVoltage(12);
@@ -218,20 +249,22 @@ public class Robot extends LoggedRobot {
         pivotMotor.setPosition(Rotations.of(-0.01));
 
       }
+      
+      pivotMotor.setControl(currentCommand.withPosition(setpoint));
+
       // if (controller.getLeftTriggerAxis() > 0.2) {
       //   compressor.enableDigital();
       // } else {
       //   compressor.disable();
       // }
-      pivotMotor.setControl(m_request.withPosition(setpoint));
       
-      the_Drive.arcadeDrive(-controller.getLeftY()/driveDivisor, controller.getRightX()/driveDivisor);
+      the_Drive.arcadeDrive(controller.getLeftY()/driveDivisor, controller.getRightX()/driveDivisor);
   }
 
   /** This function is called once when the robot is disabled. */
   @Override
   public void disabledInit() {
-    leds.setControl(new SolidColor(8, 19+8).withColor(new RGBWColor(255, 0, 255)));
+    leds.setControl(new SolidColor(8, 19+8).withColor(new RGBWColor(255, 0, 0)));
   }
 
   /** This function is called periodically when disabled. */
